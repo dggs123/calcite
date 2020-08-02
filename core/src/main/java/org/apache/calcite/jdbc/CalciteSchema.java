@@ -16,6 +16,7 @@
  */
 package org.apache.calcite.jdbc;
 
+import org.apache.calcite.adapter.jdbc.IJdbcSchema;
 import org.apache.calcite.adapter.jdbc.JdbcCatalogSchema;
 import org.apache.calcite.adapter.jdbc.JdbcSchema;
 import org.apache.calcite.linq4j.function.Experimental;
@@ -705,12 +706,12 @@ public abstract class CalciteSchema {
         return clazz.cast(CalciteSchema.this.schema);
       }
       if (clazz == DataSource.class) {
-        if (schema instanceof JdbcSchema) {
-          return clazz.cast(((JdbcSchema) schema).getDataSource());
+        if (schema instanceof IJdbcSchema) {
+          return clazz.cast(((IJdbcSchema) schema).getDataSource());
         }
-        if (schema instanceof JdbcCatalogSchema) {
-          return clazz.cast(((JdbcCatalogSchema) schema).getDataSource());
-        }
+//        if (schema instanceof JdbcCatalogSchema) {
+//          return clazz.cast(((JdbcCatalogSchema) schema).getDataSource());
+//        }
       }
       throw new ClassCastException("not a " + clazz);
     }

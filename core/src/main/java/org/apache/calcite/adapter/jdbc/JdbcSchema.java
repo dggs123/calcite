@@ -70,7 +70,7 @@ import javax.sql.DataSource;
  * queries against this schema are executed against those tables, pushing down
  * as much as possible of the query logic to SQL.</p>
  */
-public class JdbcSchema implements Schema {
+public class JdbcSchema implements Schema, IJdbcSchema {
   final DataSource dataSource;
   final String catalog;
   final String schema;

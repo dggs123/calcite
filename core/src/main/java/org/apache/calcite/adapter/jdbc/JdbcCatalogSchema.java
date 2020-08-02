@@ -51,7 +51,7 @@ import javax.sql.DataSource;
  * {@link JdbcSchema} for each schema name. Each JdbcSchema will populate its
  * tables on demand.
  */
-public class JdbcCatalogSchema extends AbstractSchema {
+public class JdbcCatalogSchema extends AbstractSchema implements IJdbcSchema {
   final DataSource dataSource;
   public final SqlDialect dialect;
   final JdbcConvention convention;
