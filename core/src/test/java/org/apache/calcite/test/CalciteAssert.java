@@ -762,14 +762,14 @@ public class CalciteAssert {
           cs.password);
       return rootSchema.add(schema.schemaName,
           JdbcSchema.create(rootSchema, schema.schemaName, dataSource,
-              cs.catalog, cs.schema));
+              cs.catalog, cs.schema, null));
     case JDBC_FOODMART:
       cs = DB.foodmart;
       dataSource =
           JdbcSchema.dataSource(cs.url, cs.driver, cs.username, cs.password);
       return rootSchema.add(schema.schemaName,
           JdbcSchema.create(rootSchema, schema.schemaName, dataSource,
-              cs.catalog, cs.schema));
+              cs.catalog, cs.schema, null));
     case JDBC_FOODMART_WITH_LATTICE:
       foodmart = addSchemaIfNotExists(rootSchema, SchemaSpec.JDBC_FOODMART);
       foodmart.add(schema.schemaName,

@@ -54,29 +54,40 @@ import javax.sql.DataSource;
 public class JdbcCatalogSchema extends AbstractSchema implements IJdbcSchema {
   final DataSource dataSource;
   public final SqlDialect dialect;
-  final JdbcConvention convention;
-  final String catalog;
+  public final JdbcConvention convention;
+  public final String catalog;
+  final String schemaPattern;
+  final String tablePattern;
 
-  /** Sub-schemas by name, lazily initialized. */
+  /**
+   * Sub-schemas by name, lazily initialized.
+   */
   final Supplier<SubSchemaMap> subSchemaMapSupplier =
       Suppliers.memoize(() -> computeSubSchemaMap());
 
-  /** Creates a JdbcCatalogSchema. */
+  /**
+   * Creates a JdbcCatalogSchema.
+   */
   public JdbcCatalogSchema(DataSource dataSource, SqlDialect dialect,
-      JdbcConvention convention, String catalog) {
+                           JdbcConvention convention, String catalog, String schemaPattern,
+                           String tablePattern) {
     this.dataSource = Objects.requireNonNull(dataSource);
     this.dialect = Objects.requireNonNull(dialect);
     this.convention = Objects.requireNonNull(convention);
     this.catalog = catalog;
+    this.schemaPattern = schemaPattern;
+    this.tablePattern = tablePattern;
   }
 
   public static JdbcCatalogSchema create(
       SchemaPlus parentSchema,
       String name,
       DataSource dataSource,
-      String catalog) {
+      String catalog,
+      String schemaPattern,
+      String tablePattern) {
     return create(parentSchema, name, dataSource,
-        SqlDialectFactoryImpl.INSTANCE, catalog);
+        SqlDialectFactoryImpl.INSTANCE, catalog, schemaPattern, tablePattern);
   }
 
   public static JdbcCatalogSchema create(
@@ -84,18 +95,21 @@ public class JdbcCatalogSchema extends AbstractSchema implements IJdbcSchema {
       String name,
       DataSource dataSource,
       SqlDialectFactory dialectFactory,
-      String catalog) {
+      String catalog,
+      String schemaPattern,
+      String tablePattern) {
     final Expression expression =
         parentSchema != null
             ? Schemas.subSchemaExpression(parentSchema, name,
-                JdbcCatalogSchema.class)
+            JdbcCatalogSchema.class)
             : Expressions.call(DataContext.ROOT,
                 BuiltInMethod.DATA_CONTEXT_GET_ROOT_SCHEMA.method);
     final SqlDialect dialect =
         JdbcSchema.createDialect(dialectFactory, dataSource);
     final JdbcConvention convention =
         JdbcConvention.of(dialect, expression, name);
-    return new JdbcCatalogSchema(dataSource, dialect, convention, catalog);
+    return new JdbcCatalogSchema(dataSource, dialect, convention, catalog, schemaPattern,
+        tablePattern);
   }
 
   private SubSchemaMap computeSubSchemaMap() {
@@ -104,12 +118,12 @@ public class JdbcCatalogSchema extends AbstractSchema implements IJdbcSchema {
     String defaultSchemaName;
     try (Connection connection = dataSource.getConnection();
          ResultSet resultSet =
-             connection.getMetaData().getSchemas(catalog, null)) {
+             connection.getMetaData().getSchemas(catalog, schemaPattern)) {
       defaultSchemaName = connection.getSchema();
       while (resultSet.next()) {
         final String schemaName = resultSet.getString(1);
         builder.put(schemaName,
-            new JdbcSchema(dataSource, dialect, convention, catalog, schemaName));
+            new JdbcSchema(dataSource, dialect, convention, catalog, schemaName, tablePattern));
       }
     } catch (SQLException e) {
       throw new RuntimeException(e);
@@ -117,27 +131,34 @@ public class JdbcCatalogSchema extends AbstractSchema implements IJdbcSchema {
     return new SubSchemaMap(defaultSchemaName, builder.build());
   }
 
-  @Override protected Map<String, Schema> getSubSchemaMap() {
+  @Override
+  protected Map<String, Schema> getSubSchemaMap() {
     return subSchemaMapSupplier.get().map;
   }
 
-  /** Returns the name of the default sub-schema. */
+  /**
+   * Returns the name of the default sub-schema.
+   */
   public String getDefaultSubSchemaName() {
     return subSchemaMapSupplier.get().defaultSchemaName;
   }
 
-  /** Returns the data source. */
+  /**
+   * Returns the data source.
+   */
   public DataSource getDataSource() {
     return dataSource;
   }
 
-  /** Contains sub-schemas by name, and the name of the default schema. */
+  /**
+   * Contains sub-schemas by name, and the name of the default schema.
+   */
   private static class SubSchemaMap {
     final String defaultSchemaName;
     final ImmutableMap<String, Schema> map;
 
     private SubSchemaMap(String defaultSchemaName,
-        ImmutableMap<String, Schema> map) {
+                         ImmutableMap<String, Schema> map) {
       this.defaultSchemaName = defaultSchemaName;
       this.map = map;
     }

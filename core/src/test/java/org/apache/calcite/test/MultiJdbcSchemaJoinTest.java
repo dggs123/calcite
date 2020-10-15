@@ -78,11 +78,11 @@ class MultiJdbcSchemaJoinTest {
     final DataSource ds1 =
         JdbcSchema.dataSource(db1, "org.hsqldb.jdbcDriver", "", "");
     rootSchema.add("DB1",
-        JdbcSchema.create(rootSchema, "DB1", ds1, null, null));
+        JdbcSchema.create(rootSchema, "DB1", ds1, null, null, null));
     final DataSource ds2 =
         JdbcSchema.dataSource(db2, "org.hsqldb.jdbcDriver", "", "");
     rootSchema.add("DB2",
-        JdbcSchema.create(rootSchema, "DB2", ds2, null, null));
+        JdbcSchema.create(rootSchema, "DB2", ds2, null, null, null));
 
     Statement stmt3 = connection.createStatement();
     ResultSet rs = stmt3.executeQuery("select table1.id, table1.field1 "
@@ -103,7 +103,7 @@ class MultiJdbcSchemaJoinTest {
     dataSource.setUsername("");
     dataSource.setPassword("");
     final JdbcCatalogSchema schema =
-        JdbcCatalogSchema.create(null, "", dataSource, "PUBLIC");
+        JdbcCatalogSchema.create(null, "", dataSource, "PUBLIC", null, null);
     assertThat(schema.getSubSchemaNames(),
         is(Sets.newHashSet("INFORMATION_SCHEMA", "PUBLIC", "SYSTEM_LOBS")));
     final CalciteSchema rootSchema0 =
@@ -140,7 +140,7 @@ class MultiJdbcSchemaJoinTest {
     rootSchema.add("DB",
         JdbcSchema.create(rootSchema, "DB",
             JdbcSchema.dataSource(db, "org.hsqldb.jdbcDriver", "", ""),
-            null, null));
+            null, null, null));
     rootSchema.add("hr", new ReflectiveSchema(new JdbcTest.HrSchema()));
     return connection;
   }
@@ -217,7 +217,7 @@ class MultiJdbcSchemaJoinTest {
     SchemaPlus rootSchema = calciteConnection.getRootSchema();
     final DataSource ds =
         JdbcSchema.dataSource(db, "org.hsqldb.jdbcDriver", "", "");
-    rootSchema.add("DB", JdbcSchema.create(rootSchema, "DB", ds, null, null));
+    rootSchema.add("DB", JdbcSchema.create(rootSchema, "DB", ds, null, null, null));
 
     Statement stmt3 = connection.createStatement();
     ResultSet rs;

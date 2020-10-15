@@ -339,13 +339,13 @@ public class ModelHandler {
     if (jsonSchema.sqlDialectFactory == null || jsonSchema.sqlDialectFactory.isEmpty()) {
       schema =
           JdbcSchema.create(parentSchema, jsonSchema.name, dataSource,
-              jsonSchema.jdbcCatalog, jsonSchema.jdbcSchema);
+              jsonSchema.jdbcCatalog, jsonSchema.jdbcSchema, null);
     } else {
       SqlDialectFactory factory = AvaticaUtils.instantiatePlugin(
           SqlDialectFactory.class, jsonSchema.sqlDialectFactory);
       schema =
           JdbcSchema.create(parentSchema, jsonSchema.name, dataSource,
-              factory, jsonSchema.jdbcCatalog, jsonSchema.jdbcSchema);
+              factory, jsonSchema.jdbcCatalog, jsonSchema.jdbcSchema, null);
     }
     final SchemaPlus schemaPlus = parentSchema.add(jsonSchema.name, schema);
     populateSchema(jsonSchema, schemaPlus);

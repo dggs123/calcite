@@ -81,9 +81,9 @@ public class JdbcTable extends AbstractQueryableTable
   public final String jdbcTableName;
   public final Schema.TableType jdbcTableType;
 
-  JdbcTable(JdbcSchema jdbcSchema, String jdbcCatalogName,
-      String jdbcSchemaName, String jdbcTableName,
-      Schema.TableType jdbcTableType) {
+  public JdbcTable(JdbcSchema jdbcSchema, String jdbcCatalogName,
+                   String jdbcSchemaName, String jdbcTableName,
+                   Schema.TableType jdbcTableType) {
     super(Object[].class);
     this.jdbcSchema = Objects.requireNonNull(jdbcSchema);
     this.jdbcCatalogName = jdbcCatalogName;
@@ -96,11 +96,13 @@ public class JdbcTable extends AbstractQueryableTable
     return "JdbcTable {" + jdbcTableName + "}";
   }
 
-  @Override public Schema.TableType getJdbcTableType() {
+  @Override
+  public Schema.TableType getJdbcTableType() {
     return jdbcTableType;
   }
 
-  @Override public <C> C unwrap(Class<C> aClass) {
+  @Override
+  public <C> C unwrap(Class<C> aClass) {
     if (aClass.isInstance(jdbcSchema.getDataSource())) {
       return aClass.cast(jdbcSchema.getDataSource());
     } else if (aClass.isInstance(jdbcSchema.dialect)) {
@@ -110,19 +112,22 @@ public class JdbcTable extends AbstractQueryableTable
     }
   }
 
+  public RelProtoDataType getProtoRowType() {
+    try {
+      return jdbcSchema.getRelDataType(
+          jdbcCatalogName,
+          jdbcSchemaName,
+          jdbcTableName);
+    } catch (SQLException e) {
+      throw new RuntimeException(
+          "Exception while reading definition of table '" + jdbcTableName
+              + "'", e);
+    }
+  }
+
   public RelDataType getRowType(RelDataTypeFactory typeFactory) {
     if (protoRowType == null) {
-      try {
-        protoRowType =
-            jdbcSchema.getRelDataType(
-                jdbcCatalogName,
-                jdbcSchemaName,
-                jdbcTableName);
-      } catch (SQLException e) {
-        throw new RuntimeException(
-            "Exception while reading definition of table '" + jdbcTableName
-                + "'", e);
-      }
+      protoRowType = getProtoRowType();
     }
     return protoRowType.apply(typeFactory);
   }
@@ -153,8 +158,10 @@ public class JdbcTable extends AbstractQueryableTable
     return writer.toSqlString();
   }
 
-  /** Returns the table name, qualified with catalog and schema name if
-   * applicable, as a parse tree node ({@link SqlIdentifier}). */
+  /**
+   * Returns the table name, qualified with catalog and schema name if
+   * applicable, as a parse tree node ({@link SqlIdentifier}).
+   */
   public SqlIdentifier tableName() {
     final List<String> names = new ArrayList<>(3);
     if (jdbcSchema.catalog != null) {
@@ -168,13 +175,13 @@ public class JdbcTable extends AbstractQueryableTable
   }
 
   public RelNode toRel(RelOptTable.ToRelContext context,
-      RelOptTable relOptTable) {
+                       RelOptTable relOptTable) {
     return new JdbcTableScan(context.getCluster(), relOptTable, this,
         jdbcSchema.convention);
   }
 
   public <T> Queryable<T> asQueryable(QueryProvider queryProvider,
-      SchemaPlus schema, String tableName) {
+                                      SchemaPlus schema, String tableName) {
     return new JdbcTableQueryable<>(queryProvider, schema, tableName);
   }
 
@@ -185,14 +192,17 @@ public class JdbcTable extends AbstractQueryableTable
         JdbcUtils.ObjectArrayRowBuilder.factory(fieldClasses(typeFactory)));
   }
 
-  @Override public Collection getModifiableCollection() {
+  @Override
+  public Collection getModifiableCollection() {
     return null;
   }
 
-  @Override public TableModify toModificationRel(RelOptCluster cluster,
-      RelOptTable table, CatalogReader catalogReader, RelNode input,
-      Operation operation, List<String> updateColumnList,
-      List<RexNode> sourceExpressionList, boolean flattened) {
+  @Override
+  public TableModify toModificationRel(RelOptCluster cluster,
+                                       RelOptTable table, CatalogReader catalogReader,
+                                       RelNode input,
+                                       Operation operation, List<String> updateColumnList,
+                                       List<RexNode> sourceExpressionList, boolean flattened) {
     jdbcSchema.convention.register(cluster.getPlanner());
 
     return new LogicalTableModify(cluster, cluster.traitSetOf(Convention.NONE),
@@ -200,17 +210,20 @@ public class JdbcTable extends AbstractQueryableTable
         sourceExpressionList, flattened);
   }
 
-  /** Enumerable that returns the contents of a {@link JdbcTable} by connecting
+  /**
+   * Enumerable that returns the contents of a {@link JdbcTable} by connecting
    * to the JDBC data source.
    *
-   * @param <T> element type */
+   * @param <T> element type
+   */
   private class JdbcTableQueryable<T> extends AbstractTableQueryable<T> {
     JdbcTableQueryable(QueryProvider queryProvider, SchemaPlus schema,
-        String tableName) {
+                       String tableName) {
       super(queryProvider, schema, JdbcTable.this, tableName);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "JdbcTableQueryable {table: " + tableName + "}";
     }
 
